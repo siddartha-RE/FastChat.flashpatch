@@ -45,6 +45,7 @@ from fastchat.model.model_adapter import (
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
+from fastchat.train.llama2_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
 
 worker_id = str(uuid.uuid4())[:8]
@@ -444,6 +445,9 @@ if __name__ == "__main__":
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
     logger.info(f"args: {args}")
+
+    replace_llama_attn_with_flash_attn()
+    logger.info('Patched Llama to use flash attention.')
 
     if args.gpus:
         if len(args.gpus.split(",")) < args.num_gpus:
