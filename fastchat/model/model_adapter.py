@@ -102,6 +102,7 @@ class BaseModelAdapter:
                 model_path,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
+                attn_implementation="flash_attention_2",
                 **from_pretrained_kwargs,
             )
         except NameError:
@@ -197,14 +198,13 @@ def load_model(
 ):
     """Load a model from Hugging Face."""
     import accelerate
-
     # get model adapter
     adapter = get_model_adapter(model_path)
-
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
         device, load_8bit, cpu_offloading
     )
+    move_to_device = True
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
         if CPU_ISA in ["avx512_bf16", "amx"]:
@@ -218,7 +218,7 @@ def load_model(
                 )
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        if num_gpus != 1:
+        if num_gpus != 1 or max_gpu_memory:
             kwargs["device_map"] = "auto"
             if max_gpu_memory is None:
                 kwargs[
@@ -230,7 +230,10 @@ def load_model(
                     for i in range(num_gpus)
                 }
             else:
+                if num_gpus == 1:
+                    move_to_device = False  # The memory cap will trigger offloading.
                 kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+                kwargs["max_memory"]["cpu"] = "480GB"
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         import transformers
@@ -352,6 +355,7 @@ def load_model(
             raise e
 
     # Load model
+    warnings.warn(str(kwargs))
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (
@@ -361,11 +365,13 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+    if move_to_device and ((
+        device == "cuda" and num_gpus == 1 and not cpu_offloading
+    ) or device in (
         "mps",
         "xpu",
         "npu",
-    ):
+    )):
         model.to(device)
 
     if device == "xpu":
@@ -1518,7 +1524,7 @@ class Llama2Adapter(BaseModelAdapter):
     """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
 
     def match(self, model_path: str):
-        return "llama-2" in model_path.lower()
+        return "llama-2" in model_path.lower() or "smaug" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1630,6 +1636,7 @@ class NousHermes2MixtralAdapter(BaseModelAdapter):
         return any(
             model_str in model_path.lower()
             for model_str in [
+                "teknium_smaug",
                 "nous-hermes-2-mixtral-8x7b-dpo",
                 "nous-hermes-2-mixtral-8x7b-sft",
             ]
@@ -1689,6 +1696,7 @@ class QwenChatAdapter(BaseModelAdapter):
             print("Invalid option. Please choose one from 'bf16', 'fp16' and 'fp32'.")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        return super().load_model(model_path, from_pretrained_kwargs)
         from transformers.generation import GenerationConfig
 
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1698,7 +1706,7 @@ class QwenChatAdapter(BaseModelAdapter):
         )
         # NOTE: if you use the old version of model file, please remove the comments below
         # config.use_flash_attn = False
-        self.float_set(config, "fp16")
+        self.float_set(config, "bf16")
         generation_config = GenerationConfig.from_pretrained(
             model_path, trust_remote_code=True
         )

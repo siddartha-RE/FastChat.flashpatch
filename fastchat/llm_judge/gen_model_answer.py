@@ -120,11 +120,13 @@ def get_model_answers(
 
                 # some models may error out when generating long outputs
                 try:
+                    from transformers.generation.streamers import TextStreamer
                     output_ids = model.generate(
                         torch.as_tensor(input_ids).cuda(),
                         do_sample=do_sample,
                         temperature=temperature,
                         max_new_tokens=max_new_token,
+                        streamer=TextStreamer(tokenizer)
                     )
                     if model.config.is_encoder_decoder:
                         output_ids = output_ids[0]
