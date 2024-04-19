@@ -35,6 +35,7 @@ class SeparatorStyle(IntEnum):
     METAMATH = auto()
     YUAN2 = auto()
     CLLM = auto()
+    LLAMA3 = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -150,6 +151,19 @@ class Conversation:
                         ret += tag + " " + message + seps[i % 2]
                 else:
                     ret += tag
+            return ret
+        elif self.sep_style == SeparatorStyle.LLAMA3:
+            ret = "<|begin_of_text|>"
+            if self.system_message:
+                ret += system_prompt
+            else:
+                ret += ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
+                    ret += f"{message.strip()}<|eot_id|>"
+                else:
+                    ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -1125,6 +1139,18 @@ If a question does not make any sense, or is not factually coherent, explain why
 
 register_conv_template(
     Conversation(
+        name="llama-3",
+        system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.LLAMA3,
+        sep="",
+        stop_str="<|eot_id|>",
+        stop_token_ids=[128001, 128009],
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="chinese-alpaca2",
         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
         system_message="You are a helpful assistant. 你是一个乐于助人的助手。请你提供专业、有逻辑、内容真实、有价值的详细回复。",
@@ -1641,6 +1667,17 @@ if __name__ == "__main__":
 
     print("-- Llama-2 template --")
     conv = get_conv_template("llama-2")
+    conv.set_system_message("You are a helpful, respectful and honest assistant.")
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("\n")
+
+    print("-- Llama-3 template --")
+    conv = get_conv_template("llama-3")
     conv.set_system_message("You are a helpful, respectful and honest assistant.")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
