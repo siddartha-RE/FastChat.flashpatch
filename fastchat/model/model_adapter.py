@@ -1536,6 +1536,7 @@ class Llama2Adapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+# Llama3 changes courtesy of https://github.com/lm-sys/FastChat/pull/3259/files by gasvn.
 class Llama3Adapter(BaseModelAdapter):
     """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
 
