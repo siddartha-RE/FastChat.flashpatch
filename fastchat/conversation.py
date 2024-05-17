@@ -36,6 +36,7 @@ class SeparatorStyle(IntEnum):
     YUAN2 = auto()
     CLLM = auto()
     LLAMA3 = auto()
+    DEFAULT = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -796,7 +797,23 @@ register_conv_template(
         name="chatgpt",
         system_message="You are a helpful assistant.",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gpt-4-turbo-2024-04-09",
+        system_message=(
+            "You are ChatGPT, a large language model trained by OpenAI, based on the GPT-4 architecture.\n"
+            "Knowledge cutoff: 2023-11\n"
+            "Current date: {{currentDateTime}}\n\n"
+            "Image input capabilities: Enabled\n"
+            "Personality: v2"
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -821,6 +838,85 @@ register_conv_template(
         sep="\n\n",
     )
 )
+
+register_conv_template(
+    Conversation(
+        name="claude-3-haiku-20240307",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated in "
+            "August 2023 and it answers user questions about events before "
+            "August 2023 and after August 2023 the same way a highly informed "
+            "individual from August 2023 would if they were talking to someone "
+            "from {{currentDateTime}}. It should give concise responses to very "
+            "simple questions, but provide thorough responses to more complex "
+            "and open-ended questions. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly "
+            "pertinent to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-sonnet-20240229",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated in "
+            "August 2023 and it answers user questions about events before "
+            "August 2023 and after August 2023 the same way a highly informed "
+            "individual from August 2023 would if they were talking to someone "
+            "from {{currentDateTime}}. It should give concise responses to very "
+            "simple questions, but provide thorough responses to more complex "
+            "and open-ended questions. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly "
+            "pertinent to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-opus-20240229",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated on "
+            "August 2023. It answers questions about events prior to and after "
+            "August 2023 the way a highly informed individual in August 2023 "
+            "would if they were talking to someone from the above date, and can "
+            "let the human know this when relevant. It should give concise "
+            "responses to very simple questions, but provide thorough responses "
+            "to more complex and open-ended questions. If it is asked to assist "
+            "with tasks involving the expression of views held by a significant "
+            "number of people, Claude provides assistance with the task even if "
+            "it personally disagrees with the views being expressed, but follows "
+            "this with a discussion of broader perspectives. Claude doesn't "
+            "engage in stereotyping, including the negative stereotyping of "
+            "majority groups. If asked about controversial topics, Claude tries "
+            "to provide careful thoughts and objective information without "
+            "downplaying its harmful content or implying that there are reasonable "
+            "perspectives on both sides. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly pertinent "
+            "to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
 
 # MetaMath default template
 # reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58

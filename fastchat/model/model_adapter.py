@@ -57,6 +57,11 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2",
     "claude-2.0",
     "claude-2.1",
+    "claude-3-haiku-20240307",
+    "claude-3-haiku-20240307-vertex",
+    "claude-3-sonnet-20240229",
+    "claude-3-sonnet-20240229-vertex",
+    "claude-3-opus-20240229",
     "claude-instant-1",
     "claude-instant-1.2",
 )
@@ -73,6 +78,8 @@ OPENAI_MODEL_LIST = (
     "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-0125-preview",
+    "gpt-4-turbo-browsing",
+    "gpt-4-turbo-2024-04-09",
 )
 
 
@@ -200,6 +207,7 @@ def load_model(
     import accelerate
     # get model adapter
     adapter = get_model_adapter(model_path)
+
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
         device, load_8bit, cpu_offloading
@@ -1106,6 +1114,10 @@ class ChatGPTAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "browsing" in model_path:
+            return get_conv_template("api_based_default")
+        if "gpt-4-turbo-2024-04-09" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
         return get_conv_template("chatgpt")
 
 
@@ -1148,6 +1160,12 @@ class ClaudeAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "claude-3-haiku" in model_path:
+            return get_conv_template("claude-3-haiku-20240307")
+        if "claude-3-sonnet" in model_path:
+            return get_conv_template("claude-3-sonnet-20240229")
+        if "claude-3-opus" in model_path:
+            return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
 
 
