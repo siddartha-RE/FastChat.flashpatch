@@ -298,6 +298,16 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.DEFAULT:
+            ret = system_prompt + "\n"
+            for role, message in self.messages:
+                if message:
+                    if type(message) is tuple:
+                        message, images = message
+                    ret += role + ": " + message + "\n"
+                else:
+                    ret += role + ":"
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
